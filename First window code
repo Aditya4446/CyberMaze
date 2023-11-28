@@ -1,0 +1,367 @@
+#include <GL/glut.h>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <SOIL/SOIL.h>
+
+// Variable to store the texture ID
+GLuint logoTexture;
+
+// Screen dimensions
+int screenWidth = 1920;
+int screenHeight = 1080;
+
+//Window Attributes
+int windowWidth = 800;
+int windowHeight = 600;
+
+// Button attributes
+// How to Play
+int howToPlayButtonX = 300;
+int howToPlayButtonY = 350;
+int howToPlayButtonWidth = 200;
+int howToPlayButtonHeight = 80;
+// Start
+int startButtonX = 800;
+int startButtonY = 350;
+int startButtonWidth = 200;
+int startButtonHeight = 80;
+// Back
+int backButtonX = 700;
+int backButtonY = 500; 
+int backButtonWidth = 150; 
+int backButtonHeight = 50;
+int buttonSize = 50;
+// Icons
+int circleButtonRadius = 50;
+int SoundX = 200;
+int SoundY = 600;
+int CoinsX = 500;
+int CoinsY = 600;
+int CreditsX = 800;
+int CreditsY = 600;
+int FeedbackX = 1100;
+int FeedbackY = 600;
+
+//Logo attributes
+int logoWidth = 200;
+int logoHeight = 180;
+
+//Text attributes
+void drawText(const std::string& text, int x, int y) {
+    glRasterPos2i(x, y);
+    for (char ch : text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ch);
+    }
+}
+
+//Title attributes
+void drawTitle(const std::string& text, int x, int y) {
+    glRasterPos2i(x, y);
+    for (char ch : text) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, ch);
+    }
+}
+
+void loadTexture() {
+    logoTexture = SOIL_load_OGL_texture(
+        "/home/anhad/Desktop/Minor 1/logo3.jpeg", 
+        SOIL_LOAD_AUTO,SOIL_CREATE_NEW_ID, 0);
+}
+
+// Function prototypes
+void displaymain();
+void displayHowToPlay();
+void displayStart();
+void displaySound();
+void displayCoins();
+void displayCredits();
+void displayFeedback();
+void reshape(int width, int height);
+void mouseClick(int button, int state, int x, int y);
+void drawCircle(int x, int y, int radius);
+void drawButtons();
+
+int mainWindow, howToPlayWindow, startWindow, soundWindow, coinsWindow, creditsWindow, feedbackWindow;
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(screenWidth, screenHeight);
+
+    mainWindow = glutCreateWindow("Cybersecurity Maze Game");
+    glutDisplayFunc(displaymain);
+    glutReshapeFunc(reshape);
+    glutMouseFunc(mouseClick);
+    loadTexture();
+
+    // how to play setup
+    glutInitWindowSize(400, 400);
+    howToPlayWindow = glutCreateWindow("How to Play");
+    glutDisplayFunc(displayHowToPlay);
+    
+    // Hide the new window on startup
+    glutSetWindow(howToPlayWindow);
+    glutHideWindow();
+    
+    // start setup
+    glutInitWindowSize(400, 400);
+    startWindow = glutCreateWindow("START");
+    glutDisplayFunc(displayStart);
+
+    // Hide the new window on startup
+    glutSetWindow(startWindow);
+    glutHideWindow();
+    
+    // sound setup
+    glutInitWindowSize(200, 200);
+    soundWindow = glutCreateWindow("sound");
+    glutDisplayFunc(displaySound);
+
+    // Hide the new window on startup
+    glutSetWindow(soundWindow);
+    glutHideWindow();
+    
+    // coins setup
+    glutInitWindowSize(200, 200);
+    coinsWindow = glutCreateWindow("coins");
+    glutDisplayFunc(displayCoins);
+
+    // Hide the new window on startup
+    glutSetWindow(coinsWindow);
+    glutHideWindow();
+    
+    // credits setup
+    glutInitWindowSize(200, 200);
+    creditsWindow = glutCreateWindow("credits");
+    glutDisplayFunc(displayCredits);
+
+    // Hide the new window on startup
+    glutSetWindow(creditsWindow);
+    glutHideWindow();
+    
+    // feedback setup
+    glutInitWindowSize(200, 200);
+    feedbackWindow = glutCreateWindow("feedback");
+    glutDisplayFunc(displayFeedback);
+
+    // Hide the new window on startup
+    glutSetWindow(feedbackWindow);
+    glutHideWindow();
+
+    // Set the main window to be displayed
+    glutSetWindow(mainWindow);
+
+    glutMainLoop();
+    return 0;
+}
+
+void displayNewWindow() {
+    glClearColor(1.0, 1.0, 1.0, 1.0);  // Set background to white
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+}
+
+void reshape(int width, int height) {
+    screenWidth = width;
+    screenHeight = height;
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, width, height, 0);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void mouseClick(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		// Check if the click is on the how to play button
+        	if (x > howToPlayButtonX && x < howToPlayButtonX + howToPlayButtonWidth && y > howToPlayButtonY && y < howToPlayButtonY + howToPlayButtonHeight) {
+        	glutSetWindow(howToPlayWindow);
+        	glutShowWindow();
+        	}
+               
+        	// Check if the click is on the start button
+        	if (x > startButtonX && x < startButtonX + startButtonWidth && y > startButtonY && y < startButtonY + startButtonHeight) {
+        	glutSetWindow(startWindow);
+        	glutShowWindow();
+        	}
+        
+        	// Check if the click is on the sound button
+        	int dx1 = x - SoundX;
+        	int dy1 = y - SoundY;
+        	if (std::sqrt(dx1 * dx1 + dy1 * dy1) < circleButtonRadius) {
+        	glutSetWindow(soundWindow);
+        	glutShowWindow();
+        	}
+        
+        	// Check if the click is on the coins button
+        	int dx2 = x - CoinsX;
+        	int dy2 = y - CoinsY;
+        	if (std::sqrt(dx2 * dx2 + dy2 * dy2) < circleButtonRadius) {
+        	glutSetWindow(coinsWindow);
+        	glutShowWindow();
+        	}
+        
+        	// Check if the click is on the credits button
+        	int dx3 = x - CreditsX;
+        	int dy3 = y - CreditsY;
+        	if (std::sqrt(dx3 * dx3 + dy3 * dy3) < circleButtonRadius) {
+        	glutSetWindow(creditsWindow);
+        	glutShowWindow();
+        	}
+        
+        	// Check if the click is on the feedback button
+        	int dx4 = x - FeedbackX;
+        	int dy4 = y - FeedbackY;
+        	if (std::sqrt(dx4 * dx4 + dy4 * dy4) < circleButtonRadius) {
+        	glutSetWindow(feedbackWindow);
+        	glutShowWindow();
+        	}
+	}        
+	glutPostRedisplay();
+}
+
+// Function to draw a circle
+void drawCircle(int x, int y, int radius) {
+    const int segments = 100;
+    glBegin(GL_TRIANGLE_FAN);
+    for (int i = 0; i < segments; i++) {
+        float theta = 2.0f * 3.1415926f * static_cast<float>(i) / static_cast<float>(segments);
+        float dx = radius * cosf(theta);
+        float dy = radius * sinf(theta);
+        glVertex2f(x + dx, y + dy);
+    }
+    glEnd();
+}
+
+void displaymain() {
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawTitle("CYBERMAZE", 260, 200);
+
+    // Draw the button
+    drawButtons();
+    
+    // Draw logo and text
+    glColor3f(1.0, 1.0, 1.0); // Set color to white for the logo and text
+    glRasterPos2i(50, 50); // Position for the logo 
+    
+    // Draw the loaded logo as a textured quad
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, logoTexture);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2i(50, 100); // Position for the logo
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2i(50 + logoWidth, 100); // Adjust the width of the logo if needed
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2i(50 + logoWidth, 100 + logoHeight); // Adjust the height of the logo if needed
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2i(50, 100 + logoHeight); // Adjust the height of the logo if needed
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    glutSwapBuffers();
+}
+
+void displayHowToPlay() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    //How To PLay text
+    glColor3f(1.0,1.0,1.0); //Text colour
+    drawText("How To Play",-1,0);
+    glutSwapBuffers();
+    }
+
+void displayStart() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+    }
+
+void displaySound() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+    }
+
+void displayCoins() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+    }
+
+void displayCredits() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+    }  
+      
+void displayFeedback() 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);  // Set background to black
+    glClear(GL_COLOR_BUFFER_BIT);
+    glutSwapBuffers();
+    }
+    
+void drawButtons() {
+    // Draw "How to Play" button at the center of the lower left of the screen
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    glBegin(GL_QUADS);
+    glVertex2i(howToPlayButtonX, howToPlayButtonY);
+    glVertex2i(howToPlayButtonX + howToPlayButtonWidth, howToPlayButtonY);
+    glVertex2i(howToPlayButtonX + howToPlayButtonWidth, howToPlayButtonY + howToPlayButtonHeight);
+    glVertex2i(howToPlayButtonX, howToPlayButtonY + howToPlayButtonHeight);
+    glEnd();
+
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("How to Play", howToPlayButtonX + 40, howToPlayButtonY + 40);
+
+    // Draw "Start" button at the center of the lower right of the screen
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    glBegin(GL_QUADS);
+    glVertex2i(startButtonX, startButtonY);
+    glVertex2i(startButtonX + startButtonWidth, startButtonY);
+    glVertex2i(startButtonX + startButtonWidth, startButtonY + startButtonHeight);
+    glVertex2i(startButtonX, startButtonY + startButtonHeight);
+    glEnd();
+
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("Start", startButtonX + 70, startButtonY + 40);
+
+    // Draw 4 circular buttons at the center bottom of the screen with spacing of 50 pixels
+    
+    //Sound button
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    drawCircle(SoundX, SoundY, circleButtonRadius);
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("Sound", SoundX-30, SoundY);
+    
+    //Coins button
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    drawCircle(CoinsX, CoinsY, circleButtonRadius);
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("Coins", CoinsX-25, CoinsY);
+    
+    //Credits button
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    drawCircle(CreditsX, CreditsY, circleButtonRadius);
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("Credits", CreditsX-30, CreditsY);
+    
+    //Feedback button
+    glColor3f(0.5, 0.5, 0.5); // Button color (gray)
+    drawCircle(FeedbackX, FeedbackY, circleButtonRadius);
+    glColor3f(1.0, 1.0, 1.0); // Text color (white)
+    drawText("Feedback", FeedbackX-40, FeedbackY);
+
+    // Draw corresponding button icon/image (you can replace this with actual images)
+    // ...
+}
