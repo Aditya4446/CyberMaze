@@ -1,0 +1,308 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+#include <GL/glut.h>
+
+const int INITIAL_MAZE_SIZE = 10;
+const int POWER_UP_DURATION = 5;
+const int LEVEL_TIME_LIMIT = 60;
+const int NUM_ENEMIES = 2;
+const int MAZE_SIZE_INCREMENT = 2;
+
+// Maze variables
+int mazeSize = INITIAL_MAZE_SIZE;
+std::vector<std::vector<bool>> maze;
+std::vector<std::vector<bool>> passThroughWalls;
+
+// Player variables
+int playerX, playerY;
+
+// Power-up variables
+int powerUpX, powerUpY;
+bool powerUpActive;
+time_t powerUpStartTime;
+time_t levelStartTime;
+
+//extras to be decided whether to keep or not
+bool speedBoostActive = false;
+bool invisibilityActive = false;
+bool teleportationActive = false;
+bool wallBreakerActive = false;
+
+// Enemy variables
+int enemyX[NUM_ENEMIES];
+int enemyY[NUM_ENEMIES];
+
+// Game state variables
+int currentLevel = 1;
+int score = 0;
+bool victory = false;
+
+Mix_Music* backgroundMusic;
+Mix_Chunk* powerUpSound;
+Mix_Chunk* victorySound;
+Mix_Chunk* enemyDefeatSound;
+
+void initializeGame() {
+    // Initialize maze
+    maze.clear();
+    maze.resize(mazeSize, std::vector<bool>(mazeSize));
+    passThroughWalls.clear();
+    passThroughWalls.resize(mazeSize, std::vector<bool>(mazeSize));
+
+    for (int i = 0; i < mazeSize; ++i) {
+        for (int j = 0; j < mazeSize; ++j) {
+            maze[i][j] = rand() % 4 == 0;
+            passThroughWalls[i][j] = false;
+        }
+    }
+
+    // Initialize player position
+    playerX = 0;
+    playerY = 0;
+
+    // Initialize power-up position and state
+    powerUpX = rand() % mazeSize;
+    powerUpY = rand() % mazeSize;
+    powerUpActive = false;
+
+    // Initialize enemy positions
+    for (int i = 0; i < NUM_ENEMIES; ++i) {
+        enemyX[i] = rand() % mazeSize;
+        enemyY[i] = rand() % mazeSize;
+    }
+
+    // Load sounds
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+    backgroundMusic = Mix_LoadMUS("/home/anhad/Desktop/Minor 1/jigglypuff-song.mp3");
+    powerUpSound = Mix_LoadWAV("/home/anhad/Desktop/Minor 1/jigglypuff-song.mp3");
+    victorySound = Mix_LoadWAV("/home/anhad/Desktop/Minor 1/jigglypuff-song.mp3");
+    enemyDefeatSound = Mix_LoadWAV("/home/anhad/Desktop/Minor 1/jigglypuff-song.mp3");
+
+    // Start background music
+    Mix_PlayMusic(backgroundMusic, -1);
+}
+
+// Additional functions for handling power-ups and enemies
+void activatePowerUp(int powerUpType) {
+    switch (powerUpType) {
+        case 0: // Speed boost
+            speedBoostActive = true;
+            break;
+        case 1: // Invisibility
+            invisibilityActive = true;
+            break;
+        case 2: // Teleportation
+            teleportationActive = true;
+            break;
+        case 3: // Wall breaker
+            wallBreakerActive = true;
+            break;
+        default:
+            break;
+    }
+    std::cout << "You collected a power-up!" << std::endl;
+}
+
+void handleEnemies() {
+    // Handle enemy movement logic here
+    // ...
+}
+
+void handleSpecialPowerUps() {
+    // Handle logic for special power-ups (speed boost, invisibility, teleportation, wall breaker)
+    // ...
+}
+
+void startLevelTimer() {
+    levelStartTime = time(nullptr);
+}
+
+bool isPowerUpExpired() {
+    time_t currentTime = time(nullptr);
+    return powerUpActive && (currentTime - powerUpStartTime >= POWER_UP_DURATION);
+}
+
+int getRemainingTime() {
+    time_t currentTime = time(nullptr);
+    return LEVEL_TIME_LIMIT - (currentTime - levelStartTime);
+}
+
+void loadNextLevel() {
+    currentLevel++;
+    std::cout << "Congratulations! You completed Level " << currentLevel - 1 << "!" << std::endl;
+    std::cout << "Generating a new maze for Level " << currentLevel << "..." << std::endl;
+    initializeGame();
+    powerUpActive = false;
+    startLevelTimer();
+}
+
+void cleanup() {
+    // Cleanup resources
+    Mix_FreeMusic(backgroundMusic);
+    Mix_FreeChunk(powerUpSound);
+    Mix_FreeChunk(victorySound);
+    Mix_FreeChunk(enemyDefeatSound);
+    Mix_CloseAudio();
+    SDL_Quit();
+
+    // Cleanup maze memory
+    // No need to delete vectors, they will be automatically deallocated
+}
+
+void handleKeypress(unsigned char key, int x, int y) {
+    if (victory) {
+        // Handle any post-victory logic here
+        return;
+    }
+
+    switch (key) {
+        case 'w':
+            if (playerX > 0 && !maze[playerX - 1][playerY]) {
+                handlePowerUp(playerX - 1, playerY);
+                playerX--;
+            }
+            break;
+        case 's':
+            if (playerX < INITIAL_MAZE_SIZE - 1 && !maze[playerX + 1][playerY]) {
+                handlePowerUp(playerX + 1, playerY);
+                playerX++;
+            }
+            break;
+        case 'a':
+            if (playerY > 0 && !maze[playerX][playerY - 1]) {
+                handlePowerUp(playerX, playerY - 1);
+                playerY--;
+            }
+            break;
+        case 'd':
+            if (playerY < INITIAL_MAZE_SIZE - 1 && !maze[playerX][playerY + 1]) {
+                handlePowerUp(playerX, playerY + 1);
+                playerY++;
+            }
+            break;
+        case 'p':
+            if (playerX == mazeSize - 1 && playerY == mazeSize - 1) {
+                loadNextLevel();
+                // Handle level completion logic here
+                Mix_PlayChannel(-1, victorySound, 0);
+                // Increase maze size for the next level
+                mazeSize += MAZE_SIZE_INCREMENT;
+                initializeGame();
+            }
+            break;
+        default:
+            break;
+    }
+
+    if (playerX == powerUpX && playerY == powerUpY && !powerUpActive) {
+        powerUpActive = true;
+        powerUpStartTime = time(nullptr);
+        std::cout << "You collected a power-up! You are invincible for " << POWER_UP_DURATION << " seconds!" << std::endl;
+    }
+
+    if (playerX == INITIAL_MAZE_SIZE - 1 && playerY == INITIAL_MAZE_SIZE - 1) {
+        std::cout << "Congratulations! You completed Level " << currentLevel << "!" << std::endl;
+        loadNextLevel();
+    }
+
+    glutPostRedisplay();
+}
+
+void handlePowerUp(int x, int y) {
+    // Check if the player has collided with a wall
+    if (maze[x][y] == 1) {
+        // Set pass through walls flag for 5 seconds
+        passThroughWalls[x][y] = true;
+    }
+}
+
+void updatePowerUp() {
+    // Check if pass through walls power-up is active
+    for (int i = 0; i < mazeSize; ++i) {
+        for (int j = 0; j < mazeSize; ++j) {
+            if (passThroughWalls[i][j]) {
+                // Decrease duration
+                passThroughWalls[i][j] = false;
+            }
+        }
+    }
+}
+
+void drawScene() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+
+    glOrtho(0, INITIAL_MAZE_SIZE, INITIAL_MAZE_SIZE, 0, -1, 1);
+
+    for (int i = 0; i < INITIAL_MAZE_SIZE; ++i) {
+        for (int j = 0; j < INITIAL_MAZE_SIZE; ++j) {
+            if (maze[i][j] || passThroughWalls[i][j]) {
+                glColor3f(0.0, 0.0, 0.0); // Black color for walls
+            } else {
+                glColor3f(1.0, 1.0, 1.0); // White color for paths
+            }
+            glBegin(GL_QUADS);
+            glVertex2f(j, i);
+            glVertex2f(j + 1, i);
+            glVertex2f(j + 1, i + 1);
+            glVertex2f(j, i + 1);
+            glEnd();
+        }
+    }
+
+    if (victory) {
+        // Drawing logic for victory pop-up here
+        // ...
+    }
+    if (powerUpActive && !isPowerUpExpired()) {
+        glColor3f(1.0, 0.0, 0.0); // Red color for active power-up
+    } else {
+        glColor3f(0.0, 1.0, 0.0); // Green color for the player
+    }
+    glBegin(GL_QUADS);
+    glVertex2f(playerY, playerX);
+    glVertex2f(playerY + 1, playerX);
+    glVertex2f(playerY + 1, playerX + 1);
+    glVertex2f(playerY, playerX + 1);
+    glEnd();
+
+    glutSwapBuffers();
+}
+
+int main(int argc, char** argv) {
+    // SDL and SDL_mixer initialization
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    SDL_Window* window = SDL_CreateWindow("Maze Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, SDL_WINDOW_OPENGL);
+    SDL_GL_CreateContext(window);
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Maze Game");
+
+    srand(time(nullptr));
+    initializeGame();
+    powerUpActive = false;
+    startLevelTimer();
+
+    glutDisplayFunc(drawScene);
+    glutKeyboardFunc(handleKeypress);
+
+    glutMainLoop();
+
+    // Game loop
+    while (!victory) {
+        // Handle events and update game state
+        // ...
+
+        // Render the scene
+        drawScene();
+    }
+
+    cleanup();
+    return 0;
+}
